@@ -28,7 +28,7 @@ export default function LogoutPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-zinc-100 to-zinc-50 px-4">
       <Card className="w-full max-w-md border-dashed border-zinc-200">
         <CardHeader>
           {/* Ícone simples de tchau/sucesso */}
