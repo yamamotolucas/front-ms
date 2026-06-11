@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation'; 
 
+const publicRoutes = ['/auth/login', '/auth/registro', '/auth/logout'];
+
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [showPopup, setShowPopup] = useState(false);
-  const publicRoutes = ['/auth/login', '/auth/registro', '/auth/logout'];
 
   useEffect(() => {
     if (publicRoutes.includes(pathname)) return;
