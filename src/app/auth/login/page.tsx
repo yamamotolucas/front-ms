@@ -82,11 +82,10 @@ export default function LoginPage() {
       setFormData({ email: '', password: '' });
       window.location.href = '/';
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       
-      console.error('Erro na requisição:', error.message);
-
-      alert(error.message);
+      console.error('Erro na requisição:', (error as Error).message);
+      alert('Ocorreu um erro ao tentar fazer login. Por favor, tente novamente mais tarde.');
       
     } finally {
       setIsLoading(false);
@@ -94,7 +93,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-zinc-100 to-zinc-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Entrar na Barbearia Network</CardTitle>
