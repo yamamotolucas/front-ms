@@ -30,7 +30,6 @@ export default function RegisterPage() {
       [name]: value,
     }));
     
-    // Limpa o erro do campo assim que o usuário começa a digitar de novo
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({
         ...prev,
@@ -79,7 +78,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // Ajuste a URL para o endpoint correto do seu identity-ms se necessário
+    
       const response = await fetch('http://localhost:8080/identity-ms/v1/auth/register', {
         method: 'POST',
         headers: {

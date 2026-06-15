@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation'; 
-import { Button } from '@/components/ui/Button'; // Importando seu botão padrão
+import { Button } from '@/components/ui/Button';
 
 const publicRoutes = ['/auth/login', '/auth/registro', '/auth/logout'];
 
@@ -68,7 +68,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               Seu tempo de conexão acabou. Por favor, faça login novamente para continuar agendando.
             </p>
             
-            {/* CONTAINER DOS BOTÕES COM SEUS COMPONENTES PADRÕES */}
             <div className="flex flex-col gap-2 pt-2">
               <Button
                 onClick={() => window.location.href = '/auth/login'}
@@ -79,7 +78,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
               
               <Button
                 variant="outline"
-                onClick={handleDismissPopup} // Dispara a nova função
+                onClick={handleDismissPopup} 
                 className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-none font-medium text-sm py-2.5"
               >
                 Agora não

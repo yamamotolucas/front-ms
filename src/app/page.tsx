@@ -17,7 +17,7 @@ interface Service {
 export default function HomePage() {
   const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false); // Novo estado para controlar falhas
+  const [isError, setIsError] = useState(false); 
 
   useEffect(() => {
     async function fetchServices() {
@@ -49,7 +49,6 @@ export default function HomePage() {
     <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col justify-between">
       <div>
         <Hero />
-        {/* Passamos o estado de erro para dentro do componente de serviços */}
         <Services services={services} isLoading={isLoading} isError={isError} />
         <Reviews />
       </div>
