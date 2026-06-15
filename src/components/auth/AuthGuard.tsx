@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation'; 
+import { Button } from '@/components/ui/Button'; // Importando seu botão padrão
 
 const publicRoutes = ['/auth/login', '/auth/registro', '/auth/logout'];
 
@@ -12,6 +13,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (publicRoutes.includes(pathname)) return;
 
+    const isDismissed = sessionStorage.getItem('dismissed_expiration_popup');
+    if (isDismissed === 'true') return;
+
     const checkSession = async () => {
       const token = localStorage.getItem('token');
 
@@ -21,7 +25,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       }
 
       try {
-       
         const response = await fetch(`http://localhost:8080/identity-ms/v1/auth/validate?token=${token}`, {
           method: 'GET',
           headers: {
@@ -46,7 +49,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     checkSession();
   }, [pathname]); 
 
-return (
+  const handleDismissPopup = () => {
+    sessionStorage.setItem('dismissed_expiration_popup', 'true');
+    setShowPopup(false);
+  };
+
+  return (
     <>
       {children}
 
@@ -56,27 +64,26 @@ return (
           <div className="bg-white p-6 rounded-xl max-w-sm w-full text-center space-y-4 shadow-xl border border-zinc-200 animate-in fade-in zoom-in-95 duration-200">
             <div className="text-4xl">⚠️</div>
             <h2 className="text-xl font-bold text-zinc-900">Sessão Expirada</h2>
-            <p className="text-sm text-zinc-600">
+            <p className="text-sm text-zinc-600 text-center">
               Seu tempo de conexão acabou. Por favor, faça login novamente para continuar agendando.
             </p>
             
-            {/* CONTAINER DOS BOTÕES */}
+            {/* CONTAINER DOS BOTÕES COM SEUS COMPONENTES PADRÕES */}
             <div className="flex flex-col gap-2 pt-2">
-              <button
+              <Button
                 onClick={() => window.location.href = '/auth/login'}
-                className="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors text-sm shadow-sm"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm py-2.5"
               >
                 Ir para o Login
-              </button>
+              </Button>
               
-              <button
-                onClick={() => {
-                  setShowPopup(false);
-                }}
-                className="w-full py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-medium rounded-lg transition-colors text-sm"
+              <Button
+                variant="outline"
+                onClick={handleDismissPopup} // Dispara a nova função
+                className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-none font-medium text-sm py-2.5"
               >
                 Agora não
-              </button>
+              </Button>
             </div>
 
           </div>
