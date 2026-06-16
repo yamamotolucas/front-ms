@@ -12,7 +12,6 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     
     const baseInputClass = "w-full rounded-lg border bg-white px-3 py-2 text-sm text-zinc-900 transition-all placeholder:text-zinc-400 focus:outline-hidden focus:ring-2";
     
-    // Se tiver erro, aplica borda vermelha, se não, usa a borda padrão do seu tema
     const stateClass = error 
       ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" 
       : "border-zinc-300 focus:border-amber-500 focus:ring-amber-500/20";

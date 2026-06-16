@@ -24,14 +24,12 @@ export function Services({ services, isLoading, isError }: ServicesProps) {
         <p className="text-zinc-500 text-sm mt-1">Conheça todos os serviços que oferecemos para você</p>
       </div>
 
-      {/* 1. SE ESTIVER CARREGANDO */}
       {isLoading && (
         <div className="flex justify-center items-center py-12">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-300 border-t-amber-600" />
         </div>
       )}
 
-      {/* 2. SE HOUVER ERRO OU TIVER VINDO VAZIO */}
       {!isLoading && isError && (
         <div className="w-full flex flex-col items-center justify-center py-12 px-4 rounded-xl border border-dashed border-zinc-200 bg-white text-center space-y-3">
           <span className="text-3xl">⚠️</span>
@@ -42,7 +40,6 @@ export function Services({ services, isLoading, isError }: ServicesProps) {
         </div>
       )}
 
-      {/* 3. SE TUDO ESTIVER OK, RENDERIZA OS CARDS COMPLETOS */}
       {!isLoading && !isError && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.isArray(services) && services.map((service) => (
@@ -59,10 +56,8 @@ export function Services({ services, isLoading, isError }: ServicesProps) {
                   </p>
                 </div>
 
-                {/* Linha Divisória Fina */}
                 <div className="w-full h-px bg-zinc-100 mb-4" />
 
-                {/* Bloco Inferior: Duração e Preço */}
                 <div className="space-y-1.5">
                   <p className="text-xs text-zinc-400 font-normal">
                     Duração: <span className="text-zinc-600 font-medium">{service.durationMinutes} minutos</span>
