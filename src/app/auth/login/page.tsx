@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 import { Input } from '@/components/ui/Input';
@@ -15,6 +15,18 @@ export default function LoginPage() {
 
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!apiError) return;
+
+    const timeout = setTimeout(() => {
+      setApiError(null);
+    }, 2500);
+
+    return () => clearTimeout(timeout);
+  }, [apiError]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -22,7 +34,7 @@ export default function LoginPage() {
       ...prev,
       [name]: value,
     }));
-   
+    
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({
         ...prev,
@@ -61,7 +73,6 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-
       const response = await fetch('http://localhost:8080/identity-ms/v1/auth/login', {
         method: 'POST',
         headers: {
@@ -73,8 +84,8 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-      
-        alert(`Erro: ${data.error}`);
+        // Alimenta o estado com o erro retornado pela API (Ex: "Credenciais inválidas")
+        setApiError(data.error || 'Usuário ou senha incorretos.');
         return;
       }
 
@@ -84,17 +95,15 @@ export default function LoginPage() {
       window.location.href = '/';
 
     } catch (error: unknown) {
-      
       console.error('Erro na requisição:', (error as Error).message);
-      alert('Ocorreu um erro ao tentar fazer login. Por favor, tente novamente mais tarde.');
-      
+      setApiError('Não foi possível conectar ao servidor. Tente novamente mais tarde.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-zinc-100 to-zinc-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-zinc-100 to-zinc-50 px-4 relative">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Entrar na Barbearia Network</CardTitle>
@@ -147,7 +156,7 @@ export default function LoginPage() {
             variant="outline"
             size="lg"
             className="w-full"
-            onClick={() => alert('Google login - Em desenvolvimento')}
+            onClick={() => setApiError('Login com Google em desenvolvimento.')}
           >
             🔵 Entrar com Google
           </Button>
@@ -174,6 +183,33 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* MODAL DE ERRO CUSTOMIZADO (Sobreposição dinâmica) */}
+      {apiError && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 px-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-sm border-none shadow-2xl bg-white text-center p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <CardHeader className="p-0">
+              <div className="mx-auto my-1 text-4xl text-center">❌</div>
+              <CardTitle className="text-xl text-zinc-800 pt-2">
+                Falha na Autenticação
+              </CardTitle>
+              <CardDescription className="text-zinc-500 text-sm font-normal mt-1.5 leading-relaxed">
+                {apiError}
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="p-0 pt-2">
+              <Button
+                type="button"
+                onClick={() => setApiError(null)}
+                className="w-full bg-zinc-900 hover:bg-zinc-800 text-white text-sm py-2 font-medium"
+              >
+                OK
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
