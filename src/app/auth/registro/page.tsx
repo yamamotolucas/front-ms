@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -11,17 +11,38 @@ export default function RegisterPage() {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
+    confirmationPassword: '',
   });
 
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
     password?: string;
-    confirmPassword?: string;
+    confirmationPassword?: string;
   }>({});
   
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+
+  useEffect(() => {
+    if (!showSuccessModal) return;
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    // Redireciona de fato após 3 segundos
+    const timeout = setTimeout(() => {
+      window.location.href = '/auth/login';
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [showSuccessModal]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -57,10 +78,10 @@ export default function RegisterPage() {
       newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
     }
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Confirmação de senha é obrigatória';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'As senhas não coincidem';
+    if (!formData.confirmationPassword) {
+      newErrors.confirmationPassword = 'Confirmação de senha é obrigatória';
+    } else if (formData.password !== formData.confirmationPassword) {
+      newErrors.confirmationPassword = 'As senhas não coincidem';
     }
 
     return newErrors;
@@ -78,7 +99,6 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-    
       const response = await fetch('http://localhost:8080/identity-ms/v1/auth/register', {
         method: 'POST',
         headers: {
@@ -88,6 +108,7 @@ export default function RegisterPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
+          confirmationPassword: formData.confirmationPassword,
         }),
       });
 
@@ -98,15 +119,13 @@ export default function RegisterPage() {
         return;
       }
 
-      alert('Conta criada com sucesso! Faça login para continuar.');
-      
-      // Redireciona para a página de login
-      window.location.href = '/auth/login';
+      // Em vez do antigo alert, ativamos o modal visual
+      setShowSuccessModal(true);
 
     } catch (error: unknown) {
       console.error('Erro na requisição:', (error as Error).message);
       alert('Ocorreu um erro ao tentar criar sua conta. Por favor, tente novamente mais tarde.');
-    } {
+    } finally {
       setIsLoading(false);
     }
   };
@@ -160,14 +179,14 @@ export default function RegisterPage() {
             />
 
             <Input
-              id="confirmPassword"
-              name="confirmPassword"
+              id="confirmationPassword"
+              name="confirmationPassword"
               type="password"
               label="Confirmar Senha"
-              value={formData.confirmPassword}
+              value={formData.confirmationPassword}
               onChange={handleInputChange}
               placeholder="Repita sua senha"
-              error={errors.confirmPassword}
+              error={errors.confirmationPassword}
               required
             />
 
@@ -205,6 +224,40 @@ export default function RegisterPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* MODAL DE CONFIRMAÇÃO VISUAL (SOBREPOSIÇÃO) */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 px-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-sm border-none shadow-2xl bg-white text-center p-6 space-y-4 animate-in zoom-in-95 duration-200">
+            <CardHeader className="p-0">
+              <div className="mx-auto my-2 text-4xl text-center animate-bounce">🎉</div>
+              <CardTitle className="text-2xl text-zinc-800">
+                Conta Criada!
+              </CardTitle>
+              <CardDescription className="text-zinc-500 mt-1">
+                Seu cadastro na Barbearia Network foi concluído com sucesso.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="p-0 flex flex-col items-center justify-center space-y-4">
+              <div className="h-7 w-7 animate-spin rounded-full border-4 border-zinc-200 border-t-amber-600" />
+              
+              <p className="text-sm text-zinc-500">
+                Redirecionando para o login em{' '}
+                <span className="font-bold text-amber-600 text-lg">{countdown}</span>{' '}
+                {countdown === 1 ? 'segundo' : 'segundos'}...
+              </p>
+
+              <Button
+                onClick={() => window.location.href = '/auth/login'}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white text-xs py-2 font-medium"
+              >
+                Ir para o Login agora
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
