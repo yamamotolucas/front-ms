@@ -52,6 +52,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const handleDismissPopup = () => {
     sessionStorage.setItem('dismissed_expiration_popup', 'true');
     setShowPopup(false);
+    window.location.reload();
   };
 
   return (
