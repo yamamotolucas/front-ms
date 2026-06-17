@@ -1,43 +1,20 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
-
-interface Review {
-  id: string;
-  name: string;
-  avatar: string;
-  stars: number;
-  comment: string;
-  date: string;
-}
+import { mockReviews, Review } from '@/data/reviewsData'; // Ajuste o caminho da importação aqui
 
 export function Reviews() {
-  const reviews: Review[] = [
-    {
-      id: '1',
-      name: 'Lucas Almeida',
-      avatar: '👨‍💻',
-      stars: 5,
-      comment: 'Ambiente sensacional e profissionais extremamente qualificados. O corte degradê com o João Santos ficou impecável!',
-      date: 'Há 2 dias'
-    },
-    {
-      id: '2',
-      name: 'Bruno Silva',
-      avatar: '🏃‍♂️',
-      stars: 5,
-      comment: 'Melhor barbearia da região sem dúvidas. O sistema de agendamento pelo site facilita demais a vida, nunca peguei fila.',
-      date: 'Há 1 semana'
-    },
-    {
-      id: '3',
-      name: 'Rafael Costa',
-      avatar: '🧑‍💼',
-      stars: 4,
-      comment: 'Atendimento nota 10 e café de primeira. Fiz a barba completa e o cuidado com a toalha quente faz toda a diferença.',
-      date: 'Há 2 semanas'
-    }
-  ];
+  const [selectedReviews, setSelectedReviews] = useState<Review[]>([]);
+
+  useEffect(() => {
+    // Sorteia e seleciona 6 avaliações aleatórias sem repetição
+    const shuffled = [...mockReviews]
+      .sort(() => 0.5 - Math.random()) // Embaralha o array de forma randômica
+      .slice(0, 6);                    // Extrai exatamente 6 elementos
+
+    setSelectedReviews(shuffled);
+  }, []);
 
   return (
     <section className="max-w-6xl mx-auto px-4 py-16 border-t border-zinc-200/60">
@@ -48,8 +25,9 @@ export function Reviews() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {reviews.map((review) => (
+      {/* Grid ajustado de 3 para 2 colunas em telas médias para acomodar melhor os 6 itens */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {selectedReviews.map((review) => (
           <Card key={review.id} className="border border-zinc-100 rounded-xl bg-white shadow-xs">
             <CardContent className="p-6 flex flex-col justify-between text-left h-full space-y-4">
               
