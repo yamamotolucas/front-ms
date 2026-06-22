@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { DashboardColumn } from '@/components/DashboardColumn';
 
-// --- INTERFACES ---
 interface Service {
   name: string;
   price: number;
@@ -16,7 +16,7 @@ interface Appointment {
   startTime: string; 
   endTime: string;
   services: Service[];
-  bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'REJECTED';
 }
 
 interface PopupConfig {
@@ -28,9 +28,10 @@ interface PopupConfig {
 }
 
 export default function DashboardPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [popupConfig, setPopupConfig] = useState<PopupConfig>({
     isOpen: false,
@@ -44,29 +45,10 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        const response = await fetch('http://localhost:8080/booking-ms/v1/bookings/myBookings', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        if (!response.ok) throw new Error('Erro ao buscar dados do painel');
-        const data = await response.json();
-        setAppointments(data);
-      } catch (error) {
-        console.error(error);
-        showPopup('Erro de Conexão', 'Não foi possível carregar seu histórico.', 'error');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchDashboardData();
+    const token = localStorage.getItem('token');
+    setHasToken(!!token);
   }, []);
 
-  // --- EXECUÇÃO DO CANCELAMENTO APÓS CONFIRMAÇÃO ---
   const executeCancel = async (appointment: Appointment) => {
     setCancellingId(appointment.startTime);
     setPopupConfig(prev => ({ ...prev, isOpen: false })); 
@@ -80,13 +62,10 @@ export default function DashboardPage() {
         }
       });
 
-      if (!response.ok) {
-        console.log(response);
-        throw new Error('Não foi possível cancelar o agendamento no servidor.');
-      }
+      if (!response.ok) throw new Error('Não foi possível cancelar o agendamento no servidor.');
 
       showPopup('Sucesso', 'Seu agendamento foi cancelado com sucesso.', 'success', () => {
-        window.location.reload(); 
+        setRefreshKey(k => k + 1);
       });
 
     } catch (error: any) {
@@ -96,8 +75,7 @@ export default function DashboardPage() {
     }
   };
 
-  // --- ENGATILHA O POP-UP DE CONFIRMAÇÃO ---
-  const handleCancelBooking = (appointment: Appointment) => {
+  const handleCancelTrigger = (appointment: Appointment) => {
     showPopup(
       'Cancelar Agendamento',
       'Tem certeza absoluta de que deseja cancelar este agendamento? Esta ação não poderá ser desfeita.',
@@ -106,32 +84,7 @@ export default function DashboardPage() {
     );
   };
 
-  // --- REGRAS DE FILTRAGEM DINÂMICA DE DATAS ---
-  const now = new Date();
-
-  const upcomingAppointments = appointments.filter(app => {
-    const appDate = new Date(app.startTime);
-    return appDate >= now && app.bookingStatus !== 'CANCELLED' && app.bookingStatus !== 'COMPLETED';
-  });
-
-  const pastAppointments = appointments.filter(app => {
-    const appDate = new Date(app.startTime);
-    return appDate < now || app.bookingStatus === 'CANCELLED' || app.bookingStatus === 'COMPLETED';
-  });
-
-  // --- AUXILIARES DE FORMATAÇÃO ---
-  const formatDateTimeBR = (isoString: string) => {
-    const date = new Date(isoString);
-    const dateStr = date.toLocaleDateString('pt-BR');
-    const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    return { dateStr, timeStr };
-  };
-
-  const calculateTotal = (services: Service[]) => {
-    return services.reduce((acc, current) => acc + current.price, 0).toFixed(2);
-  };
-
-  if (isLoading) {
+  if (hasToken === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-300 border-t-amber-600" />
@@ -157,139 +110,29 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        {/* LAYOUT EM DUAS COLUNAS */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
-          {/* COLUNA 1: FUTUROS E PENDENTES */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <span className="flex h-3 w-3 rounded-full bg-emerald-500" />
-              <h2 className="text-xl font-bold text-zinc-800">Próximos Agendamentos</h2>
-              <span className="ml-auto text-xs font-semibold px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600">
-                {upcomingAppointments.length}
-              </span>
-            </div>
+          {/* COLUNA 1: PRÓXIMOS AGENDAMENTOS */}
+          <DashboardColumn
+            key={`upcoming-${refreshKey}`}
+            title="Próximos Agendamentos"
+            scope="UPCOMING"
+            indicatorColor="bg-emerald-500"
+            showCancelButton={true}
+            cancellingId={cancellingId}
+            onCancelTrigger={handleCancelTrigger}
+          />
 
-            {upcomingAppointments.length === 0 ? (
-              <Card className="border-dashed border-zinc-200 bg-white">
-                <CardContent className="p-8 text-center text-zinc-400 italic text-sm">
-                  Nenhum agendamento marcado para os próximos dias.
-                </CardContent>
-              </Card>
-            ) : (
-              upcomingAppointments.map((app, index) => {
-                const { dateStr, timeStr } = formatDateTimeBR(app.startTime);
-                const isOverdue = new Date(app.startTime) < now;
-
-                const tooltipMessage = app.bookingStatus === 'PENDING'
-                  ? "Para confirmar o agendamento, verifique seu e-mail e clique no link de validação recebido."
-                  : "Seu agendamento está confirmado! Lembramos que temos uma tolerância de até 10 minutos de atraso.";
-
-                return (
-                  <Card key={index} className="border-zinc-200 bg-white shadow-xs hover:border-zinc-300 transition-all">
-                    <CardContent className="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-bold px-2 py-0.5 rounded border ${
-                            isOverdue 
-                              ? 'bg-red-50 text-red-700 border-red-200' 
-                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          }`}>
-                            {timeStr}
-                          </span>
-                          <span className="text-sm font-medium text-zinc-600">{dateStr}</span>
-                          
-                          {/* CSS Tooltip Instantâneo */}
-                          <div className="relative flex items-center group">
-                            <span 
-                              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ml-1 cursor-pointer transition-all ${
-                                app.bookingStatus === 'CONFIRMED' 
-                                  ? 'bg-emerald-600 text-white shadow-xs' 
-                                  : 'bg-zinc-200 text-zinc-700 border border-zinc-300'
-                              }`}
-                            >
-                              {app.bookingStatus === 'CONFIRMED' ? 'Confirmado' : 'Pendente'}
-                            </span>
-                            
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-zinc-900 text-white text-xs rounded-lg p-2.5 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-xl z-10 text-center leading-normal">
-                              {tooltipMessage}
-                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900" />
-                            </div>
-                          </div>
-
-                        </div>
-                        <h4 className="font-bold text-zinc-800 text-base">Barbeiro ID: {app.barberId}</h4>
-                        <p className="text-xs text-zinc-500">
-                          <span className="font-medium text-zinc-400">Serviços:</span> {app.services.map(s => s.name).join(', ')}
-                        </p>
-                        <p className="text-sm font-bold text-amber-600">R$ {calculateTotal(app.services)}</p>
-                      </div>
-
-                      <Button
-                        onClick={() => handleCancelBooking(app)}
-                        isLoading={cancellingId === app.startTime}
-                        className="bg-red-600 text-white hover:bg-red-700 text-xs font-bold py-2 px-4 rounded-lg self-start sm:self-center shadow-sm transition-all cursor-pointer border-none"
-                      >
-                        Cancelar
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </div>
-
-          {/* COLUNA 2: HISTÓRICO / PASSADOS */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <span className="flex h-3 w-3 rounded-full bg-zinc-400" />
-              <h2 className="text-xl font-bold text-zinc-800">Histórico de Atendimentos</h2>
-              <span className="ml-auto text-xs font-semibold px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600">
-                {pastAppointments.length}
-              </span>
-            </div>
-
-            {pastAppointments.length === 0 ? (
-              <Card className="border-dashed border-zinc-200 bg-white">
-                <CardContent className="p-8 text-center text-zinc-400 italic text-sm">
-                  Seu histórico de agendamentos está vazio.
-                </CardContent>
-              </Card>
-            ) : (
-              pastAppointments.map((app, index) => {
-                const { dateStr, timeStr } = formatDateTimeBR(app.startTime);
-                return (
-                  <Card key={index} className="border-zinc-150 bg-zinc-50/50 opacity-85">
-                    <CardContent className="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 text-zinc-500">
-                          <span className="text-xs font-medium bg-zinc-200 text-zinc-700 px-2 py-0.5 rounded">
-                            {timeStr}
-                          </span>
-                          <span className="text-xs">{dateStr}</span>
-                          
-                          <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
-                            app.bookingStatus === 'CANCELLED' 
-                              ? 'bg-red-50 text-red-600 border-red-100' 
-                              : app.bookingStatus === 'COMPLETED'
-                              ? 'bg-blue-50 text-blue-600 border-blue-100'
-                              : 'bg-zinc-100 text-zinc-600 border-zinc-200'
-                          }`}>
-                            {app.bookingStatus === 'CANCELLED' ? 'Cancelado' : app.bookingStatus === 'COMPLETED' ? 'Concluído' : app.bookingStatus}
-                          </span>
-                        </div>
-                        <h4 className="font-semibold text-zinc-700 text-sm">Barbeiro ID: {app.barberId}</h4>
-                        <p className="text-xs text-zinc-400">
-                          {app.services.map(s => s.name).join(', ')}
-                        </p>
-                        <p className="text-xs font-semibold text-zinc-500">Total: R$ {calculateTotal(app.services)}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </div>
+          {/* COLUNA 2: HISTÓRICO DE ATENDIMENTOS */}
+          <DashboardColumn
+            key={`past-${refreshKey}`}
+            title="Histórico de Atendimentos"
+            scope="PAST"
+            indicatorColor="bg-zinc-400"
+            showCancelButton={false}
+            cancellingId={cancellingId}
+            onCancelTrigger={handleCancelTrigger}
+          />
 
         </div>
       </div>
@@ -304,9 +147,7 @@ export default function DashboardPage() {
                 {popupConfig.type === 'error' && '❌'}
                 {popupConfig.type === 'confirm' && '⚠️'}
               </div>
-              <CardTitle className="text-xl text-zinc-800 pt-2">
-                {popupConfig.title}
-              </CardTitle>
+              <CardTitle className="text-xl text-zinc-800 pt-2">{popupConfig.title}</CardTitle>
               <CardDescription className="text-zinc-500 text-sm font-normal mt-1.5 leading-relaxed">
                 {popupConfig.message}
               </CardDescription>
@@ -334,7 +175,7 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => {
                     setPopupConfig(prev => ({ ...prev, isOpen: false }));
-                    if (popupConfig.onConfirm) popupConfig.onConfirm(); 
+                    if (popupConfig.onConfirm) popupConfig.onConfirm();
                   }}
                   className={`w-full text-white text-sm py-2 font-medium cursor-pointer ${
                     popupConfig.type === 'success' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-zinc-900 hover:bg-zinc-800'
