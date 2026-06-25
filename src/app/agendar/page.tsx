@@ -223,6 +223,12 @@ export default function BookingPage() {
 
         if (backendMessage.includes("Customer already has a booking scheduled for this date.")) {
           showPopup('Agendamento Recusado', 'Ops! Você já possui um agendamento marcado para esta mesma data.', 'error');
+
+        } else if (backendMessage.includes("Customer already has a pending booking.")) {
+          showPopup('Agendamento Recusado', 'Você já possui um agendamento pendente. Por favor, confirme ou cancele o outro agendamento.', 'error');
+
+        } else if (backendMessage.includes("Customer already has a confirmed booking.")) {
+          showPopup('Agendamento Recusado', 'Você já possui um agendamento confirmado.', 'error');
         } else {
           showPopup('Erro no Agendamento', backendMessage || 'Não foi possível concluir seu agendamento.', 'error');
         }
