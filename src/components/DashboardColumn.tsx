@@ -12,6 +12,7 @@ interface Service {
 interface Appointment {
   bookingId: number;
   barberId: number;
+  barberName: string;
   startTime: string; 
   endTime: string;
   services: Service[];
@@ -213,7 +214,7 @@ export function DashboardColumn({
                       </div>
                     </div>
                     
-                    <h4 className="font-bold text-zinc-800 text-base">Barbeiro ID: {app.barberId}</h4>
+                    <h4 className="font-bold text-zinc-800 text-base">Barbeiro: {app.barberName}</h4>
                     <p className="text-xs text-zinc-500">
                       <span className="font-medium text-zinc-400">Serviços:</span> {app.services.map(s => s.name).join(', ')}
                     </p>
