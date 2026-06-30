@@ -90,6 +90,7 @@ export default function LoginPage() {
       }
 
       if (data.token) localStorage.setItem('token', data.token);
+      if (data.role) localStorage.setItem('user_role', data.role);
 
       setFormData({ email: '', password: '' });
       window.location.href = '/';
