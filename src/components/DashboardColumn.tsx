@@ -13,7 +13,7 @@ interface Appointment {
   bookingId: number;
   barberId: number;
   barberName: string;
-  startTime: string; 
+  startTime: string;
   endTime: string;
   services: Service[];
   bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'REJECTED';
@@ -29,36 +29,42 @@ interface DashboardColumnProps {
   onCancelTrigger: (app: Appointment) => void;
 }
 
-export function DashboardColumn({ 
-  title, 
-  scope, 
-  indicatorColor, 
-  showCancelButton = false, 
+export function DashboardColumn({
+  title,
+  scope,
+  indicatorColor,
+  showCancelButton = false,
   cancellingId,
-  onCancelTrigger 
+  onCancelTrigger
 }: DashboardColumnProps) {
-  
+
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('');
 
   useEffect(() => {
     async function fetchColumnData() {
       setIsLoading(true);
       try {
         let url = `http://localhost:8080/booking-ms/v1/bookings/myBookings?scope=${scope}&page=${page}&size=5`;
+
         if (selectedStatus) {
           url += `&statuses=${selectedStatus}`;
         } else {
-          if(scope === 'UPCOMING') {
+          if (scope === 'UPCOMING') {
             url += `&statuses=PENDING,CONFIRMED`;
           }
         }
 
-        console.log(url)
+        if (scope === 'PAST' && selectedPeriod) {
+          url += `&lastDays=${selectedPeriod}`;
+        }
+
+        console.log(url);
         const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -66,9 +72,9 @@ export function DashboardColumn({
         });
 
         if (!response.ok) throw new Error('Erro ao carregar dados da coluna');
-        
+
         const data = await response.json();
-        
+
         setAppointments(data.content || []);
         setTotalPages(data.totalPages || 0);
         setTotalElements(data.totalElements || 0);
@@ -80,7 +86,7 @@ export function DashboardColumn({
     }
 
     fetchColumnData();
-  }, [scope, page, selectedStatus]);
+  }, [scope, page, selectedStatus, selectedPeriod]); // 🌟 Adicionado selectedPeriod nas dependências
 
   const formatDateTimeBR = (isoString: string) => {
     const cleanIso = isoString.includes('Z') || (isoString.includes('-') && isoString.length > 19)
@@ -94,7 +100,7 @@ export function DashboardColumn({
 
   return (
     <div className="space-y-6 bg-zinc-50/50 p-4 rounded-xl border border-zinc-200/60">
-      
+
       {/* CABEÇALHO DA COLUNA E FILTROS */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 border-b border-zinc-200 pb-4">
         <div className="flex items-center gap-2">
@@ -104,12 +110,15 @@ export function DashboardColumn({
             {totalElements}
           </span>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 sm:ml-auto w-full sm:w-auto">
 
         {/* Seletor de Status Independente */}
         <select
           value={selectedStatus}
           onChange={(e) => { setSelectedStatus(e.target.value); setPage(0); }}
-          className="sm:ml-auto text-xs bg-white border border-zinc-300 rounded-lg px-2.5 py-1.5 font-medium text-zinc-700 cursor-pointer outline-hidden focus:border-amber-500"
+          className="text-xs bg-white border border-zinc-300 rounded-lg px-2.5 py-1.5 font-medium text-zinc-700 cursor-pointer outline-hidden focus:border-amber-500 w-full sm:w-auto"
         >
           <option value="">Todos os Status</option>
           {scope === 'UPCOMING' ? (
@@ -127,6 +136,21 @@ export function DashboardColumn({
             </>
           )}
         </select>
+
+        {scope === 'PAST' && (
+          <select
+            value={selectedPeriod}
+            onChange={(e) => { setSelectedPeriod(e.target.value); setPage(0);}}
+            className="text-xs bg-white border border-zinc-300 rounded-lg px-2.5 py-1.5 font-medium text-zinc-700 cursor-pointer outline-hidden focus:border-amber-500 w-full sm:w-auto"
+          >
+            <option value="">Todo o Histórico</option>
+            <option value="7">Última Semana</option>
+            <option value="15">Últimos 15 dias</option>
+            <option value="30">Últimos 30 dias</option>
+          </select>
+        )}
+
+
       </div>
 
       {/* LISTAGEM DOS CARDS */}
@@ -159,10 +183,10 @@ export function DashboardColumn({
             const parseToLocalDate = (isoStr: string) => {
               const [datePart, timePart] = isoStr.split('T');
               if (!timePart) return new Date(isoStr).getTime();
-              
+
               const [year, month, day] = datePart.split('-').map(Number);
               const [hour, minute] = timePart.split(':').map(Number);
-              
+
               return new Date(year, month - 1, day, hour, minute).getTime();
             };
 
@@ -170,41 +194,35 @@ export function DashboardColumn({
             const now = new Date().getTime();
             const tenMinutesInMs = 10 * 60 * 1000;
 
-            // Define se está atrasado mais de 10 minutos (Apenas para a coluna UPCOMING e agendamentos em aberto)
-            const isDelayed = scope === 'UPCOMING' && 
-                              (now - appointmentTime) > tenMinutesInMs && 
-                              (app.bookingStatus === 'PENDING' || app.bookingStatus === 'CONFIRMED');
+            const isDelayed = scope === 'UPCOMING' &&
+              (now - appointmentTime) > tenMinutesInMs &&
+              (app.bookingStatus === 'PENDING' || app.bookingStatus === 'CONFIRMED');
 
             return (
               <Card key={app.bookingId} className={`border-zinc-200 bg-white shadow-xs transition-all ${scope === 'PAST' ? 'opacity-85' : 'hover:border-zinc-300'}`}>
                 <CardContent className="p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      
-                      {/* BADGE HORÁRIO PADRONIZADO */}
-                      <span className={`text-sm font-bold px-2.5 py-0.5 rounded-lg border transition-colors ${
-                        isDelayed
-                          ? 'bg-red-50 text-red-700 border-red-200 animate-pulse' 
+                      <span className={`text-sm font-bold px-2.5 py-0.5 rounded-lg border transition-colors ${isDelayed
+                          ? 'bg-red-50 text-red-700 border-red-200 animate-pulse'
                           : 'bg-zinc-100 text-zinc-800 border-zinc-200'
-                      }`}>
+                        }`}>
                         {timeStr}
                       </span>
-                      
+
                       <span className="text-sm font-medium text-zinc-500">{dateStr}</span>
-                      
-                      {/* Tooltip Customizado */}
+
                       <div className="relative flex items-center group">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ml-1 transition-all ${
-                          app.bookingStatus === 'CONFIRMED' ? 'bg-emerald-600 text-white shadow-xs' :
-                          app.bookingStatus === 'CANCELLED' ? 'bg-red-100 text-red-700 border border-red-200' :
-                          app.bookingStatus === 'COMPLETED' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
-                          'bg-zinc-200 text-zinc-700 border border-zinc-300'
-                        } ${scope === 'UPCOMING' ? 'cursor-pointer' : ''}`}>
-                          {app.bookingStatus === 'CONFIRMED' ? 'Confirmado' : 
-                           app.bookingStatus === 'CANCELLED' ? 'Cancelado' : 
-                           app.bookingStatus === 'COMPLETED' ? 'Concluído' : 'Pendente'}
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ml-1 transition-all ${app.bookingStatus === 'CONFIRMED' ? 'bg-emerald-600 text-white shadow-xs' :
+                            app.bookingStatus === 'CANCELLED' ? 'bg-red-100 text-red-700 border border-red-200' :
+                              app.bookingStatus === 'COMPLETED' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
+                                'bg-zinc-200 text-zinc-700 border border-zinc-300'
+                          } ${scope === 'UPCOMING' ? 'cursor-pointer' : ''}`}>
+                          {app.bookingStatus === 'CONFIRMED' ? 'Confirmado' :
+                            app.bookingStatus === 'CANCELLED' ? 'Cancelado' :
+                              app.bookingStatus === 'COMPLETED' ? 'Concluído' : 'Pendente'}
                         </span>
-                        
+
                         {scope === 'UPCOMING' && (
                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-zinc-900 text-white text-xs rounded-lg p-2.5 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-xl z-10 text-center leading-normal">
                             {tooltipMessage}
@@ -213,13 +231,13 @@ export function DashboardColumn({
                         )}
                       </div>
                     </div>
-                    
+
                     <h4 className="font-bold text-zinc-800 text-base">Barbeiro: {app.barberName}</h4>
                     <p className="text-xs text-zinc-500">
                       <span className="font-medium text-zinc-400">Serviços:</span> {app.services.map(s => s.name).join(', ')}
                     </p>
                     <p className="text-sm font-bold text-amber-600">
-                        R$ {app.services.reduce((acc, c) => acc + c.price, 0).toFixed(2)}
+                      R$ {app.services.reduce((acc, c) => acc + c.price, 0).toFixed(2)}
                     </p>
                   </div>
 
