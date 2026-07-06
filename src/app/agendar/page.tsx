@@ -78,7 +78,7 @@ export default function BookingPage() {
       try {
         setIsApiError(false);
      
-        const resBarbers = await fetch('http://localhost:8080/identity-ms/v1/barber');
+        const resBarbers = await fetch('http://localhost:8080/identity-ms/v1/barber/findAll');
         if (!resBarbers.ok) throw new Error("Erro ao buscar barbeiros");
         const dataBarbers = await resBarbers.json();
         

@@ -86,7 +86,7 @@ export function DashboardColumn({
     }
 
     fetchColumnData();
-  }, [scope, page, selectedStatus, selectedPeriod]); // 🌟 Adicionado selectedPeriod nas dependências
+  }, [scope, page, selectedStatus, selectedPeriod]); 
 
   const formatDateTimeBR = (isoString: string) => {
     const cleanIso = isoString.includes('Z') || (isoString.includes('-') && isoString.length > 19)
