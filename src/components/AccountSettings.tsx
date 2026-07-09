@@ -91,12 +91,13 @@ export function AccountSettings() {
         name: formData.name,
         ...(passwordData.password && {
           password: passwordData.password,
-          newPassword: passwordData.newPassword
+          newPassword: passwordData.newPassword,
+          confirmationNewPassword: passwordData.confirmPassword
         })
       };
 
-      const response = await fetch(`http://localhost:8080/identity-ms/v1/users/${userData.id}`, {
-        method: 'PUT',
+      const response = await fetch(`http://localhost:8080/identity-ms/v1/users/update`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -105,15 +106,21 @@ export function AccountSettings() {
       });
 
       if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-        throw new Error(errJson.message || 'Erro ao atualizar perfil');
+        const error = await response.text();
+        if(error.includes('Current password is incorrect')) {
+          throw new Error('Senha atual incorreta. Por favor, tente novamente.');
+        }
+        
+        throw new Error(error || 'Erro ao atualizar dados da conta.');
       }
 
-      const updatedData: UserData = await response.json();
-      setUserData(updatedData);
-      
       setPasswordData({ password: '', newPassword: '', confirmPassword: '' });
-      setMessage({ type: 'success', text: 'Dados updatedData com sucesso!' });
+      setMessage({ type: 'success', text: 'Dados atualizados com sucesso! Você será redirecionado para a página de login.' });
+      setTimeout(() => {
+        localStorage.clear();
+        window.location.href = '/auth/login';
+      }, 2000);
+
     } catch (error: any) {
       console.error('Erro ao atualizar dados da conta:', error);
       setMessage({ type: 'error', text: error.message || 'Ocorreu um erro ao salvar as alterações.' });
@@ -155,9 +162,6 @@ export function AccountSettings() {
   }
 
   return (
-    /* 🚀 SOLUÇÃO DO COMPRIMENTO E DO GRUDADO:
-       - min-h-screen garante que a cor ocupe a janela toda (eliminando o fundo preto).
-       - py-12 adiciona o espaçamento superior e inferior para desgrudar os elementos. */
     <div className="min-h-screen w-full bg-zinc-50 text-zinc-900 px-4 py-12 flex flex-col items-center">
       <div className="w-full max-w-2xl space-y-6">
         
