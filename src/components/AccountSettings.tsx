@@ -162,7 +162,7 @@ export function AccountSettings() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-zinc-50 text-zinc-900 px-4 py-12 flex flex-col items-center">
+    <div className="w-full space-y-6">
       <div className="w-full max-w-2xl space-y-6">
         
         {/* CABEÇALHO DA TELA */}
