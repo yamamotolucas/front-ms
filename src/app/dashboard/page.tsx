@@ -28,6 +28,7 @@ interface PopupConfig {
 }
 
 export default function DashboardPage() {
+
   const [hasToken, setHasToken] = useState<boolean | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   
@@ -44,6 +45,7 @@ export default function DashboardPage() {
     setPopupConfig({ isOpen: true, title, message, type, onConfirm });
   };
 
+  // Executa a validação do token logo no primeiro carregamento
   useEffect(() => {
     const token = localStorage.getItem('token');
     setHasToken(!!token);
@@ -84,6 +86,7 @@ export default function DashboardPage() {
     );
   };
 
+  // --- 🔄 1. SESSÃO CARREGANDO ---
   if (hasToken === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50">
@@ -92,6 +95,30 @@ export default function DashboardPage() {
     );
   }
 
+  // --- 🔐 2. BLOQUEIO DE ACESSO RESTRITO (Sem Token) ---
+  if (hasToken === false) {
+    return (
+      <div className="min-h-screen w-full bg-zinc-50 flex items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-md border-zinc-200 bg-white shadow-xs text-center animate-in zoom-in-95 duration-200">
+          <CardContent className="p-6 space-y-4">
+            <div className="text-4xl pt-2">🔐</div>
+            <h3 className="text-xl font-bold text-zinc-800">Acesso Restrito</h3>
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              Você precisa estar logado na sua conta para visualizar ou gerenciar o seu painel de agendamentos.
+            </p>
+            <Button 
+              onClick={() => window.location.href = '/auth/login'}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold py-2.5 cursor-pointer border-none rounded-lg text-sm transition-all shadow-xs"
+            >
+              Fazer Login Agora
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // --- 🟢 3. RENDERIZAÇÃO NORMAL DA PÁGINA (Com Token válido) ---
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 px-4 py-12 flex flex-col items-center relative">
       <div className="w-full max-w-6xl space-y-8">
