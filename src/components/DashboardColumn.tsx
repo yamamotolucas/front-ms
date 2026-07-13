@@ -64,7 +64,6 @@ export function DashboardColumn({
           url += `&lastDays=${selectedPeriod}`;
         }
 
-        console.log(url);
         const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
