@@ -3,7 +3,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
+
 export function Hero() {
+
+  const isBarber = localStorage.getItem('user_role') === 'BARBER';
+  const buttonHref = isBarber ? '/agenda' : '/agendar';
+  const buttonText = isBarber ? 'Minha Agenda' : 'Agendar Horário';
+
   return (
     <section className="bg-[#1c1c1e] text-white py-20 text-center px-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -14,9 +20,9 @@ export function Hero() {
           Agende seu horário com os melhores profissionais da região. Qualidade e estilo garantidos.
         </p>
         <div className="pt-4">
-          <Link href="/agendar">
+          <Link href={buttonHref}>
             <Button size="lg" className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-8 py-3">
-              Agendar Horário
+              {buttonText}
             </Button>
           </Link>
         </div>
