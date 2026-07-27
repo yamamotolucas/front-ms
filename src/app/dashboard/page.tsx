@@ -16,7 +16,7 @@ interface Appointment {
   startTime: string; 
   endTime: string;
   services: Service[];
-  bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'REJECTED';
+  bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'REJECTED' | 'MISSED';
 }
 
 interface PopupConfig {

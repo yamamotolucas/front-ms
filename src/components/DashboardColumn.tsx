@@ -16,7 +16,7 @@ interface Appointment {
   startTime: string;
   endTime: string;
   services: Service[];
-  bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'REJECTED';
+  bookingStatus: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'REJECTED' | 'MISSED';
 }
 
 interface DashboardColumnProps {
@@ -85,7 +85,7 @@ export function DashboardColumn({
     }
 
     fetchColumnData();
-  }, [scope, page, selectedStatus, selectedPeriod]); 
+  }, [scope, page, selectedStatus, selectedPeriod]);
 
   const formatDateTimeBR = (isoString: string) => {
     const cleanIso = isoString.includes('Z') || (isoString.includes('-') && isoString.length > 19)
@@ -128,8 +128,7 @@ export function DashboardColumn({
           ) : (
             <>
               <option value="COMPLETED">Concluídos</option>
-              <option value="CONFIRMED">Confirmados</option>
-              <option value="PENDING">Pendentes</option>
+              <option value="MISSED">Perdidos</option>
               <option value="REJECTED">Rejeitados</option>
               <option value="CANCELLED">Cancelados</option>
             </>
@@ -139,7 +138,7 @@ export function DashboardColumn({
         {scope === 'PAST' && (
           <select
             value={selectedPeriod}
-            onChange={(e) => { setSelectedPeriod(e.target.value); setPage(0);}}
+            onChange={(e) => { setSelectedPeriod(e.target.value); setPage(0); }}
             className="text-xs bg-white border border-zinc-300 rounded-lg px-2.5 py-1.5 font-medium text-zinc-700 cursor-pointer outline-hidden focus:border-amber-500 w-full sm:w-auto"
           >
             <option value="">Todo o Histórico</option>
@@ -148,7 +147,6 @@ export function DashboardColumn({
             <option value="30">Últimos 30 dias</option>
           </select>
         )}
-
 
       </div>
 
@@ -177,6 +175,8 @@ export function DashboardColumn({
               tooltipMessage = "Este agendamento foi cancelado.";
             } else if (app.bookingStatus === 'COMPLETED') {
               tooltipMessage = "Este agendamento já foi concluído.";
+            } else if (app.bookingStatus === 'MISSED') {
+              tooltipMessage = "Horário ultrapassado sem presença do cliente.";
             }
 
             const parseToLocalDate = (isoStr: string) => {
@@ -203,8 +203,8 @@ export function DashboardColumn({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <span className={`text-sm font-bold px-2.5 py-0.5 rounded-lg border transition-colors ${isDelayed
-                          ? 'bg-red-50 text-red-700 border-red-200 animate-pulse'
-                          : 'bg-zinc-100 text-zinc-800 border-zinc-200'
+                        ? 'bg-red-50 text-red-700 border-red-200 animate-pulse'
+                        : 'bg-zinc-100 text-zinc-800 border-zinc-200'
                         }`}>
                         {timeStr}
                       </span>
@@ -215,19 +215,19 @@ export function DashboardColumn({
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ml-1 transition-all ${app.bookingStatus === 'CONFIRMED' ? 'bg-emerald-600 text-white shadow-xs' :
                             app.bookingStatus === 'CANCELLED' ? 'bg-red-100 text-red-700 border border-red-200' :
                               app.bookingStatus === 'COMPLETED' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
-                                'bg-zinc-200 text-zinc-700 border border-zinc-300'
-                          } ${scope === 'UPCOMING' ? 'cursor-pointer' : ''}`}>
+                                app.bookingStatus === 'MISSED' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                                  'bg-zinc-200 text-zinc-700 border border-zinc-300'
+                          } cursor-pointer`}>
                           {app.bookingStatus === 'CONFIRMED' ? 'Confirmado' :
                             app.bookingStatus === 'CANCELLED' ? 'Cancelado' :
-                              app.bookingStatus === 'COMPLETED' ? 'Concluído' : 'Pendente'}
+                              app.bookingStatus === 'COMPLETED' ? 'Concluído' :
+                                app.bookingStatus === 'MISSED' ? 'Perdido' : 'Pendente'}
                         </span>
 
-                        {scope === 'UPCOMING' && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-zinc-900 text-white text-xs rounded-lg p-2.5 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-xl z-10 text-center leading-normal">
-                            {tooltipMessage}
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900" />
-                          </div>
-                        )}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-zinc-900 text-white text-xs rounded-lg p-2.5 opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 shadow-xl z-10 text-center leading-normal">
+                          {tooltipMessage}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900" />
+                        </div>
                       </div>
                     </div>
 
@@ -240,7 +240,7 @@ export function DashboardColumn({
                     </p>
                   </div>
 
-                  {showCancelButton && app.bookingStatus !== 'CANCELLED' && (
+                  {showCancelButton && app.bookingStatus !== 'CANCELLED' && app.bookingStatus !== 'MISSED' && (
                     <Button
                       onClick={() => onCancelTrigger(app)}
                       isLoading={cancellingId === app.startTime}
