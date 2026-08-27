@@ -8,15 +8,26 @@ export function Header() {
   const [token, setHasToken] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
 
-  // 🚀 Correção de Hidratação: Lê o localStorage apenas quando o componente monta no navegador
   useEffect(() => {
-    setHasToken(localStorage.getItem('token'));
-    setRole(localStorage.getItem('user_role'));
+    function syncAuth() {
+      setHasToken(localStorage.getItem('token'));
+      setRole(localStorage.getItem('user_role'));
+    }
+
+    syncAuth();
+
+    window.addEventListener('storage', syncAuth);
+
+    return () => {
+      window.removeEventListener('storage', syncAuth);
+    };
+
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user_role');
+    window.dispatchEvent(new Event('storage'));
     window.location.href = '/auth/login';
   };
 
@@ -32,7 +43,6 @@ export function Header() {
             Home
           </Link>
 
-          {/* 💈 MENUS DO CLIENTE (CUSTOMER) */}
           {token && role === 'CUSTOMER' && (
             <>
               <Link href="/dashboard" className="text-zinc-700 hover:text-amber-600 font-medium transition-colors">
@@ -44,26 +54,18 @@ export function Header() {
             </>
           )}
 
-          {/* 💈 MENUS DO BARBEIRO (BARBER) */}
           {token && role === 'BARBER' && (
-            <>
-              <Link href="/agenda" className="text-zinc-700 hover:text-amber-600 font-medium transition-colors">
-                Minha Agenda
-              </Link>
-              <Link href="/barber/servicos" className="text-zinc-700 hover:text-amber-600 font-medium transition-colors">
-                Serviços
-              </Link>
-            </>
+            <Link href="/agenda" className="text-zinc-700 hover:text-amber-600 font-medium transition-colors">
+              Minha Agenda
+            </Link>
           )}
 
-          {/* ⚙️ MENU EM COMUM (Sempre por último se estiver logado) */}
           {token && (
             <Link href="/conta" className="text-zinc-700 hover:text-amber-600 font-medium transition-colors">
               Conta
             </Link>
           )}
 
-          {/* 🔐 CONTROLE DE LOGIN / LOGOUT */}
           {token ? (
             <Button
               variant="outline"
@@ -74,7 +76,7 @@ export function Header() {
             </Button>
           ) : (
             <Button
-              onClick={() => window.location.href = '/auth/login'}
+              onClick={() => (window.location.href = '/auth/login')}
               className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white font-medium cursor-pointer rounded-lg border-none"
             >
               Entrar
