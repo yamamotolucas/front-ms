@@ -103,11 +103,11 @@ export default function LoginPage() {
   };
 
   const handleGithubLogin = () => {
-    window.location.href = 'http://localhost:8080/identity-ms/login/github';
+    window.location.href = 'http://localhost:8080/identity-ms/v1/auth/oauth2/login/github';
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:8080/identity-ms/login/google';
+    window.location.href = 'http://localhost:8080/identity-ms/v1/auth/oauth2/login/google';
   };
 
   return (
