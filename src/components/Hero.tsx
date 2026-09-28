@@ -1,12 +1,17 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
-
 export function Hero() {
+  const [isBarber, setIsBarber] = useState(false);
 
-  const isBarber = localStorage.getItem('user_role') === 'BARBER';
+  useEffect(() => {
+    const role = localStorage.getItem('user_role');
+    setIsBarber(role === 'BARBER');
+  }, []);
+
   const buttonHref = isBarber ? '/agenda' : '/agendar';
   const buttonText = isBarber ? 'Minha Agenda' : 'Agendar Horário';
 
