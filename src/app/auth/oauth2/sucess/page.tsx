@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function OAuthSuccessPage() {
+function OAuthSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -26,4 +26,12 @@ export default function OAuthSuccessPage() {
   }, [searchParams, router]);
 
   return <div className="p-8 text-center text-zinc-600">Conectando e autenticando...</div>;
+}
+
+export default function OAuthSuccessPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-zinc-600">Carregando...</div>}>
+      <OAuthSuccessContent />
+    </Suspense>
+  );
 }
